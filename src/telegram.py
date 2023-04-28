@@ -5,7 +5,7 @@ from telebot import types
 
 
 
-with open('conf.json', 'r') as bot_conf:
+with open('conf\conf.json', 'r') as bot_conf:
     conf = json.loads(bot_conf.read())
 
 token = conf["bot_token"]  # значением вашего токена, полученного от BotFather
