@@ -12,10 +12,10 @@
 # Архитектура проекта будет следующей. Структура файлов:
 
 bot
-|- __init__.py
-|- app.py
-|- telegram.py
-|- database
-   |- __init__.py
-   |- dbapi.py
-   |- models.py
+- __init__.py
+- app.py
+- telegram.py
+- database
+   - __init__.py
+   - dbapi.py
+   - models.py
