@@ -1,9 +1,14 @@
 import telebot
+import json
+
 from telebot import types
 
-from database import add
 
-token = "6194037900:AAESAcVbSUp6ExUqcf_61juRgEvkYrTrnBA"  # значением вашего токена, полученного от BotFather
+
+with open('conf.json', 'r') as bot_conf:
+    conf = json.loads(bot_conf.read())
+
+token = conf["bot_token"]  # значением вашего токена, полученного от BotFather
 bot = telebot.TeleBot(token)
 
 list_of_func = ['/add', '/delete', '/list', '/echo'] #список реализованных функций 
