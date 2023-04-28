@@ -4,11 +4,15 @@ import json
 from telebot import types
 
 
+<<<<<<< HEAD
 
 with open('conf.json', 'r') as bot_conf:
     conf = json.loads(bot_conf.read())
 
 token = conf["bot_token"]  # значением вашего токена, полученного от BotFather
+=======
+token = # значением вашего токена, полученного от BotFather
+>>>>>>> 5e128b5828960a6d7e013258f81850c934e24f38
 bot = telebot.TeleBot(token)
 
 list_of_func = ['/add', '/delete', '/list', '/echo'] #список реализованных функций 
