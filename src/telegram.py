@@ -2,7 +2,7 @@ import telebot
 import json
 
 from telebot import types
-from api import add
+from api import add, delete, existence_check
 
 
 with open('src\config\conf.json', 'r') as bot_conf:
@@ -11,7 +11,7 @@ with open('src\config\conf.json', 'r') as bot_conf:
 token = conf["bot_token"]  # значением вашего токена, полученного от BotFather
 bot = telebot.TeleBot(token)
 
-list_of_func = ['/add', '/delete', '/list', '/echo'] #список реализованных функций 
+list_of_func = ['/add', '/delete'] #список реализованных функций 
 
 
 #start 
@@ -91,7 +91,7 @@ def add_book_publish_date(message):
     else:
         bot.send_message(chat_id, f"Такая книга уже существует")
 
-        
+
 #delete
 drop_book_dict = {} #Словарь для сбора информации о книге, которую нужно создать
 class Drop_Book:
@@ -136,9 +136,11 @@ def drop_book_publish_date(message):
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True,row_width= 2, one_time_keyboard= True)
     markup.add('Да', 'Нет')
     book_info= vars(book) #Создаёт словарь с информацией для проверки существования книги
-     #здесь должна быть ветка событий зависящая от результата запроса в бдщку
-    msg= bot.send_message(chat_id, f"Найдена книга:{book.title}/{book.author}/{book.publish_date}.\nУдаляем?", reply_markup=markup)
-    bot.register_next_step_handler(msg, drop_book)
+    if existence_check(book_info):
+        msg= bot.send_message(chat_id, f"Найдена книга:{book.title}/{book.author}/{book.publish_date}.\nУдаляем?", reply_markup=markup)
+        bot.register_next_step_handler(msg, drop_book)
+    else: 
+        bot.send_message(chat_id, "Такой книги нет.")
     
 def drop_book (message):
     chat_id = message.chat.id
@@ -146,11 +148,13 @@ def drop_book (message):
     book = drop_book_dict[chat_id]
     if answer == 'Да':
         book_info= vars(book) #Создаёт словарь с информацией о книге которую нужно удалить
-        bot.send_message(chat_id, "Книга удалена")
+        if delete(book_info):
+            bot.send_message(chat_id, "Книга удалена")
+        else:
+            bot.send_message(chat_id, "Что-то пошло не так....")
     elif answer == 'Нет':
         bot.send_message(chat_id, "Не хочешь — как хочешь")
-    else:
-        bot.send_message(chat_id, "Невозможно удалить книгу")
+    
 
 
 
