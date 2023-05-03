@@ -1,6 +1,11 @@
 import sqlite3
+import json
 
-con = sqlite3.connect("src\data\\21lib.db",  check_same_thread=False)
+with open('src\config\conf.json', 'r') as bot_conf:
+    conf = json.loads(bot_conf.read())
+
+db_path = conf["db_path"]
+con = sqlite3.connect(db_path,  check_same_thread=False)
 cur = con.cursor()
 
 
