@@ -2,10 +2,10 @@ import telebot
 import json
 
 from telebot import types
+from api import add
 
 
-
-with open('conf\conf.json', 'r') as bot_conf:
+with open('src\config\conf.json', 'r') as bot_conf:
     conf = json.loads(bot_conf.read())
 
 token = conf["bot_token"]  # значением вашего токена, полученного от BotFather
@@ -84,10 +84,14 @@ def add_book_publish_date(message):
         return
     book = new_book_dict[chat_id]
     book.publish_date = int(publish_date)
-    bot.send_message(chat_id, f"Отлично, Вы добавили книгу: {book.title}/{book.author}/{book.publish_date}")
-    print(vars(book))
     book_info= vars(book) #переменная содержит в себе словарь который передаётся в функцию для добавления в бдшку.
-    add(book_info)
+    
+    if add(book_info):
+        bot.send_message(chat_id, f"Отлично, Вы добавили книгу: {book.title}/{book.author}/{book.publish_date}")
+    else:
+        bot.send_message(chat_id, f"Такая книга уже существует")
+
+        
 #delete
 drop_book_dict = {} #Словарь для сбора информации о книге, которую нужно создать
 class Drop_Book:
