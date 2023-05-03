@@ -43,6 +43,12 @@ def delete(book):
         return True
     else:
         return False
+    
+def list_of_books():
+    res= cur.execute(f"""SELECT title , author, publish_date FROM books""")
+    return res.fetchall()
+
+
 
 
 book_example = {'title' : "Test",
@@ -52,6 +58,7 @@ def main():
     #print(existence_check(book_example))
     #print(add(book_example))
     #print(delete(book_example))
+    print(list_of_books())
     pass
     
 

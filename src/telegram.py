@@ -2,7 +2,7 @@ import telebot
 import json
 
 from telebot import types
-from api import add, delete, existence_check
+from api import add, delete, existence_check, list_of_books
 
 
 with open('src\config\conf.json', 'r') as bot_conf:
@@ -11,7 +11,7 @@ with open('src\config\conf.json', 'r') as bot_conf:
 token = conf["bot_token"]  # значением вашего токена, полученного от BotFather
 bot = telebot.TeleBot(token)
 
-list_of_func = ['/add', '/delete'] #список реализованных функций 
+list_of_func = ['/add', '/delete', '/list', '/find'] #список реализованных функций 
 
 
 #start 
@@ -161,17 +161,13 @@ def drop_book (message):
 #list
 @bot.message_handler(commands=['list'])
 def handle_list(message):
-    list= [
-        {
-        'title' : 'брух1',
-        'author': 'лолкек',
-        'publish_date': 1192
-        }
-     ] #переменная которая принимает список со словарями со всеми книгами из бдшки
+    list= list_of_books()#переменная которая принимает список со словарями со всеми книгами из бдшки
     chat_id = message.chat.id
+    bot.send_message(chat_id, f"Вот что у нас есть:")
     for book in list:
-        print(book)
-        bot.send_message(chat_id, f"{book['title']}, {book['author']}, {book['publish_date']}")
+        bot.send_message(chat_id, f"Название: {book[0]}\nАвтор:{book[1]}\nГод издания: {book[2]}")
+    bot.send_message(chat_id, f"На этом всё.")
+    
 
 
 
@@ -213,12 +209,15 @@ def find_book_publish_date(message):
         msg = bot.reply_to(message, 'Некорректный ввод, попробуйте ещё раз.')
         bot.register_next_step_handler(msg, find_book_publish_date)
         return
-    book = drop_book_dict[chat_id]
+    book = find_book_dict[chat_id]
     book.publish_date = int(publish_date)
     
     book_info= vars(book) #Создаёт словарь с информацией для проверки существования книги
-    #здесь должна быть ветка событий зависящая от результата запроса в бдщку
-    #msg= bot.send_message(chat_id, f"Найдена книга:{book.title}/{book.author}/{book.publish_date}")
+    if existence_check(book_info):
+        msg= bot.send_message(chat_id, f"Найдена книга:{book.title}/{book.author}/{book.publish_date}")
+    else:
+        bot.send_message(chat_id, f"Такого у нас нет")
+
     
 
 #borrow
