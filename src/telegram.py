@@ -194,7 +194,7 @@ def find_book_title(message):
     book = Book(title)
     find_book_dict[chat_id] = book
     
-    msg= bot.send_message(chat_id, "Введите имя атора:")
+    msg= bot.send_message(chat_id, "Введите имя атвора:")
     bot.register_next_step_handler(msg, find_book_author)
 
 def find_book_author(message):
