@@ -2,8 +2,15 @@ import telebot
 import json
 
 from telebot import types
-from api import add, delete, existence_check, list_of_books, take_id, take_book
+from api import *
 
+
+class Book:
+    def __init__(self, title):
+        self.title = title
+        self.author = None
+        self.publish_date = None
+        self.path = None
 
 with open('src\config\conf.json', 'r') as bot_conf:
     conf = json.loads(bot_conf.read())
@@ -11,14 +18,25 @@ with open('src\config\conf.json', 'r') as bot_conf:
 token = conf["bot_token"]  # значением вашего токена, полученного от BotFather
 bot = telebot.TeleBot(token)
 
-list_of_func = ['/add', '/delete', '/list', '/find', '/take'] #список реализованных функций 
+list_of_func = ['/add', '/list', '/find', '/take', '/delete'] #список реализованных функций 
 
 
 #start 
 @bot.message_handler(commands=['start'])  
 def handle_start(message):
+
+    if user_existence_check(message.from_user.id)== False:
+        user_info = {
+            'chat_id' : message.from_user.id,
+            'first_name' : message.from_user.first_name,
+            'last_name' : message.from_user.last_name,
+            'user_name' : message.from_user.username
+            }
+        add_user(user_info)
+    
     text = f"Привет, *{message.from_user.username}*.\nДобро пожаловать в чат бота-библиотеки!\nДля того чтобы выбрать нужную функциию используй команду */help*"
     bot.reply_to(message, text, parse_mode = 'Markdown')
+
 
 @bot.message_handler(commands=['help'])
 def handle_help(message):
@@ -29,29 +47,8 @@ def handle_help(message):
     bot.reply_to(message, text, reply_markup=markup)
 
 
-
-@bot.message_handler(commands=['echo'])
-def handler_echo(message):
-    name = message.from_user.first_name
-    msg = bot.reply_to(message, f'{name}, тобой выбрана функция echo. Напиши мне что-нибудь и я напишу это в ответ.')
-    bot.register_next_step_handler(msg, echo_reply)
-
-def echo_reply(message):
-    text = message.text
-    chat_id  = message.chat.id
-    bot.send_message(chat_id, f"Тобой было отправлено:\n{text}")
-
-
-
-
 #add
 new_book_dict = {} #Словарь для сбора информации о книге, которую нужно создать
-class New_Book:
-    def __init__(self, title):
-        self.title = title
-        self.author = None
-        self.publish_date = None
-
 @bot.message_handler(commands=['add'])
 def handle_add(message):
     msg = bot.reply_to(message, "Введите название книги:")
@@ -60,7 +57,7 @@ def handle_add(message):
 def add_book_title(message):
     chat_id = message.chat.id
     title = message.text
-    book = New_Book(title)
+    book = Book(title)
     new_book_dict[chat_id] = book
     
     msg= bot.send_message(chat_id, "Введите имя атора:")
@@ -86,71 +83,65 @@ def add_book_publish_date(message):
     book.publish_date = int(publish_date)
     book_info= vars(book) #переменная содержит в себе словарь который передаётся в функцию для добавления в бдшку.
     
-    if add(book_info):
-        bot.send_message(chat_id, f"Отлично, Вы добавили книгу: {book.title}/{book.author}/{book.publish_date}")
+    if book_existence_check(book_info) == False:
+        msg = bot.send_message(chat_id, f"Отлично, кидай свою книгу!")
+        bot.register_next_step_handler(msg, add_book_path)
     else:
         bot.send_message(chat_id, f"Такая книга уже существует")
-
-
-#delete
-drop_book_dict = {} #Словарь для сбора информации о книге, которую нужно создать
-class Drop_Book:
-    def __init__(self, title):
-        self.title = title
-        self.author = None
-        self.publish_date = None
-
-@bot.message_handler(commands=['delete'])   
-def handle_delete(message):
-    msg = bot.reply_to(message, "Введите название книги:")
-    bot.register_next_step_handler(msg, drop_book_title)
-    
-def drop_book_title(message):
-    chat_id = message.chat.id
-    title = message.text
-    book = Drop_Book(title)
-    drop_book_dict[chat_id] = book
-    
-    msg= bot.send_message(chat_id, "Введите имя атора:")
-    bot.register_next_step_handler(msg, drop_book_author)
-
-def drop_book_author(message):
-    chat_id = message.chat.id
-    author= message.text
-    book = drop_book_dict[chat_id]
-    book.author = author
-    
-    msg= bot.send_message(chat_id, "Введите год издания:")
-    bot.register_next_step_handler(msg, drop_book_publish_date)
-
-def drop_book_publish_date(message):
-    chat_id = message.chat.id
-    publish_date = message.text
-    if not publish_date.isdigit():
-        msg = bot.reply_to(message, 'Некорректный ввод, попробуйте ещё раз.')
-        bot.register_next_step_handler(msg, drop_book_publish_date)
         return
-    book = drop_book_dict[chat_id]
-    book.publish_date = int(publish_date)
-    
+def add_book_path(message):
+    chat_id = message.chat.id
+    path = 'src/books/' + message.document.file_name
+    try:
+        file_info = bot.get_file(message.document.file_id)
+        downloaded_file = bot.download_file(file_info.file_path)
+        with open (path, 'wb') as new_book:
+            new_book.write(downloaded_file)
+        bot.reply_to(message, "Спасибо!")
+    except Exception:
+        bot.reply_to(message, "Что то пошло не так...\nВозможно файл слишком большой.")
+    finally:   
+        book = new_book_dict[chat_id]
+        book.path = path   
+        book_info= vars(book)
+        add_book(book_info)
+
+drop_book_list = {}
+@bot.message_handler(commands=['delete'])   
+def drop_book(message):
+    msg= bot.reply_to(message, "Введите ID книги:")
+    bot.register_next_step_handler(msg, drop_book_check)
+
+
+def drop_book_check(message):
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True,row_width= 2, one_time_keyboard= True)
     markup.add('Да', 'Нет')
-    book_info= vars(book) #Создаёт словарь с информацией для проверки существования книги
-    if existence_check(book_info):
-        msg= bot.send_message(chat_id, f"Найдена книга:{book.title}/{book.author}/{book.publish_date}.\nУдаляем?", reply_markup=markup)
+    answ = message.text
+
+
+    chat_id = message.chat.id
+    book_info= book_id_serch(int(answ))
+    book = Book(book_info[0][0])
+    book.author = book_info[0][1]
+    book.publish_date = book_info[0][2]
+    drop_book_list[chat_id] = book
+
+    if len(book_info) != 0:
+        msg= bot.send_message(chat_id, f"Найдена книга:{book_info[0][0]}/{book_info[0][1]}/{book_info[0][2]}.\nУдаляем?", reply_markup=markup)
         bot.register_next_step_handler(msg, drop_book)
     else: 
-        bot.send_message(chat_id, "Такой книги нет.")
+        bot.send_message(chat_id, "Книги с таким ID нет.")
     
 def drop_book (message):
     chat_id = message.chat.id
     answer = message.text
-    book = drop_book_dict[chat_id]
+    book = drop_book_list[chat_id]
     if answer == 'Да':
         book_info= vars(book) #Создаёт словарь с информацией о книге которую нужно удалить
-        if delete(book_info):
+        try:
+            delete(book_info)
             bot.send_message(chat_id, "Книга удалена")
-        else:
+        except Exception:
             bot.send_message(chat_id, "Что-то пошло не так....")
     elif answer == 'Нет':
         bot.send_message(chat_id, "Не хочешь — как хочешь")
@@ -173,12 +164,6 @@ def handle_list(message):
 
 #find
 find_book_dict = {} #Словарь для сбора информации о книге, которую нужно найти
-class Find_Book:
-    def __init__(self, title):
-        self.title = title
-        self.author = None
-        self.publish_date = None
-
 @bot.message_handler(commands=['find'])
 def handle_find(message):
     msg = bot.reply_to(message, "Введите название книги:")
@@ -187,7 +172,7 @@ def handle_find(message):
 def find_book_title(message):
     chat_id = message.chat.id
     title = message.text
-    book = Find_Book(title)
+    book = Book(title)
     find_book_dict[chat_id] = book
     
     msg= bot.send_message(chat_id, "Введите имя атора:")
@@ -213,7 +198,7 @@ def find_book_publish_date(message):
     book.publish_date = int(publish_date)
     
     book_info= vars(book) #Создаёт словарь с информацией для проверки существования книги
-    if existence_check(book_info):
+    if book_existence_check(book_info):
         id = take_id(book_info)
         msg= bot.send_message(chat_id, f"Найдена книга: {book.title}/{book.author}/{book.publish_date}\nВот её ID: {id}")
     else:
