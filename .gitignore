@@ -1,5 +1,7 @@
+#Files to ignore
 conf.json 
 21lib.db
 21lib.db.sqbpro4
 
-folder_to_ignore\src\books
+#Folders to ignore
+books/
