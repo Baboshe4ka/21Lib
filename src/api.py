@@ -11,16 +11,24 @@ cur = con.cursor()
 
 
 def existence_check(book):
-    print(book)
     res = cur.execute(f"""SELECT id FROM books 
-                WHERE 
-                    title = "{book['title']}" AND
-                    author = "{book['author']}" AND
-                    publish_date = "{book['publish_date']}"; """)
+                    WHERE 
+                        title = "{book['title']}" AND
+                        author = "{book['author']}" AND
+                        publish_date = "{book['publish_date']}"; """)
     if len(res.fetchall()) == 0:
         return False
     else:
         return True
+    
+def take_id(book):
+    res = cur.execute(f"""SELECT id FROM books 
+                    WHERE 
+                        title = "{book['title']}" AND
+                        author = "{book['author']}" AND
+                        publish_date = "{book['publish_date']}"; """)
+    id = res.fetchone()
+    return id[0]
      
 
 def add(book):
@@ -45,20 +53,25 @@ def delete(book):
         return False
     
 def list_of_books():
-    res= cur.execute(f"""SELECT title , author, publish_date FROM books""")
+    res= cur.execute(f"SELECT id, title , author, publish_date FROM books")
     return res.fetchall()
 
+def take_book(book_id):
+    res= cur.execute(f"""SELECT path FROM books WHERE id = {book_id}""")
+    book_path = res.fetchone()
+    return book_path[0]
 
 
-
-book_example = {'title' : "Test",
-                'author': "Test",
+book_example = {'title' : "Postgres: Первое знакомство",
+                'author': "Лузанов, Рогов, Лёвшин",
                 'publish_date': "2023"}
 def main():
     #print(existence_check(book_example))
     #print(add(book_example))
     #print(delete(book_example))
-    print(list_of_books())
+    #print(list_of_books())
+    #print(take_id(book_example))
+    print(take_book(1))
     pass
     
 

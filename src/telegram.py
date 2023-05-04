@@ -2,7 +2,7 @@ import telebot
 import json
 
 from telebot import types
-from api import add, delete, existence_check, list_of_books
+from api import add, delete, existence_check, list_of_books, take_id, take_book
 
 
 with open('src\config\conf.json', 'r') as bot_conf:
@@ -11,7 +11,7 @@ with open('src\config\conf.json', 'r') as bot_conf:
 token = conf["bot_token"]  # значением вашего токена, полученного от BotFather
 bot = telebot.TeleBot(token)
 
-list_of_func = ['/add', '/delete', '/list', '/find'] #список реализованных функций 
+list_of_func = ['/add', '/delete', '/list', '/find', '/take'] #список реализованных функций 
 
 
 #start 
@@ -165,7 +165,7 @@ def handle_list(message):
     chat_id = message.chat.id
     bot.send_message(chat_id, f"Вот что у нас есть:")
     for book in list:
-        bot.send_message(chat_id, f"Название: {book[0]}\nАвтор:{book[1]}\nГод издания: {book[2]}")
+        bot.send_message(chat_id, f"ID: {book[0]}\nНазвание: {book[1]}\nАвтор: {book[2]}\nГод издания: {book[3]}")
     bot.send_message(chat_id, f"На этом всё.")
     
 
@@ -214,108 +214,24 @@ def find_book_publish_date(message):
     
     book_info= vars(book) #Создаёт словарь с информацией для проверки существования книги
     if existence_check(book_info):
-        msg= bot.send_message(chat_id, f"Найдена книга:{book.title}/{book.author}/{book.publish_date}")
+        id = take_id(book_info)
+        msg= bot.send_message(chat_id, f"Найдена книга: {book.title}/{book.author}/{book.publish_date}\nВот её ID: {id}")
     else:
         bot.send_message(chat_id, f"Такого у нас нет")
 
     
 
-#borrow
-borrow_book_dict = {} #Словарь для сбора информации о книге, которую нужно найти
-class Borrow_Book:
-    def __init__(self, title):
-        self.title = title
-        self.author = None
-        self.publish_date = None
+@bot.message_handler(commands=['take'])
+def handle_take(message):
+    msg = bot.reply_to(message, "Введите ID книги:")
+    bot.register_next_step_handler(msg, take_book_id)
 
-@bot.message_handler(commands=['borrow'])
-def handle_borrow(message):
-    msg = bot.reply_to(message, "Введите название книги:")
-    bot.register_next_step_handler(msg, borrow_book_title)
-
-def borrow_book_title(message):
+def take_book_id(message):
     chat_id = message.chat.id
-    title = message.text
-    book = Borrow_Book(title)
-    borrow_book_dict[chat_id] = book
-    
-    msg= bot.send_message(chat_id, "Введите имя атора:")
-    bot.register_next_step_handler(msg, borrow_book_author)
-
-def borrow_book_author(message):
-    chat_id = message.chat.id
-    author= message.text
-    book = borrow_book_dict[chat_id]
-    book.author = author
-    
-    msg= bot.send_message(chat_id, "Введите год издания:")
-    bot.register_next_step_handler(msg, borrow_book_publish_date)
-
-def borrow_book_publish_date(message):
-    chat_id = message.chat.id
-    publish_date = message.text
-    if not publish_date.isdigit():
-        msg = bot.reply_to(message, 'Некорректный ввод, попробуйте ещё раз.')
-        bot.register_next_step_handler(msg, borrow_book_publish_date)
-        return
-    book = drop_book_dict[chat_id]
-    book.publish_date = int(publish_date)
-    
-    book_info= vars(book) #Создаёт словарь с информацией для проверки существования книги
-    #здесь должна быть ветка событий зависящая от результата запроса в бдщку
-    #msg= bot.send_message(chat_id, f"Найдена книга:{book.title}/{book.author}/{book.publish_date}")
-
-#retrieve
-@bot.message_handler(commands=['retrieve'])
-def handle_retrieve(message):
-    id = message.chat.id #создаёт айди пользователя для опраки его в бд 
-    #Тут будет логика проверки взятых пользователем книг
-    bot.send_message(chat_id, "Вы вернули книгу:")
-
-
-#stats
-stats_book_dict = {} #Словарь для сбора информации о книге, которую нужно найти
-class Stats_Book:
-    def __init__(self, title):
-        self.title = title
-        self.author = None
-        self.publish_date = None
-@bot.message_handler(commands=['stats'])
-def handle_stats(message):
-    msg = bot.reply_to(message, "Введите название книги:")
-    bot.register_next_step_handler(msg, stats_book_title)
-
-def stats_book_title(message):
-    chat_id = message.chat.id
-    title = message.text
-    book = Stats_Book(title)
-    stats_book_dict[chat_id] = book
-    
-    msg= bot.send_message(chat_id, "Введите имя атора:")
-    bot.register_next_step_handler(msg, stats_book_author)
-
-def stats_book_author(message):
-    chat_id = message.chat.id
-    author= message.text
-    book = borrow_book_dict[chat_id]
-    book.author = author
-    
-    msg= bot.send_message(chat_id, "Введите год издания:")
-    bot.register_next_step_handler(msg, stats_book_publish_date)
-
-def stats_book_publish_date(message):
-    chat_id = message.chat.id
-    publish_date = message.text
-    if not publish_date.isdigit():
-        msg = bot.reply_to(message, 'Некорректный ввод, попробуйте ещё раз.')
-        bot.register_next_step_handler(msg, stats_book_publish_date)
-        return
-    book = drop_book_dict[chat_id]
-    book.publish_date = int(publish_date)
-    
-    book_info= vars(book) #Создаёт словарь с информацией для проверки существования книги
-    #здесь должна быть ветка событий зависящая от результата запроса в бдщку
-
+    book_id = message.text
+    book_path = take_book(book_id)
+    bot.send_message(chat_id, f"Вот твоя книга:")
+    bot.send_document(chat_id, document= open(book_path, 'rb'))
 
 
 bot.infinity_polling()
