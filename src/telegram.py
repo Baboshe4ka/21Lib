@@ -75,10 +75,14 @@ def add_book_author(message):
 def add_book_publish_date(message):
     chat_id = message.chat.id
     publish_date = message.text
+    
     if not publish_date.isdigit():
+        if publish_date.lower() in  ['стоп', 'stop']:
+            return
         msg = bot.reply_to(message, 'Некорректный ввод, попробуйте ещё раз.')
         bot.register_next_step_handler(msg, add_book_publish_date)
         return
+    
     book = new_book_dict[chat_id]
     book.publish_date = int(publish_date)
     book_info= vars(book) #переменная содержит в себе словарь который передаётся в функцию для добавления в бдшку.
@@ -109,17 +113,27 @@ def add_book_path(message):
 drop_book_list = {}
 @bot.message_handler(commands=['delete'])   
 def drop_book(message):
-    msg= bot.reply_to(message, "Введите ID книги:")
-    bot.register_next_step_handler(msg, drop_book_check)
-
+    role = role_check(message.chat.id)
+    if role == 'admin':
+        msg= bot.reply_to(message, "Введите ID книги:")
+        bot.register_next_step_handler(msg, drop_book_check)
+    else:
+        msg= bot.reply_to(message, "У вас нет прав для удаления книги.")
 
 def drop_book_check(message):
+
+    if not message.text.isdigit():
+        if message.text.lower() in  ['стоп', 'stop']:
+            return
+        msg = bot.reply_to(message, 'Некорректный ввод, попробуйте ещё раз.')
+        bot.register_next_step_handler(msg, drop_book_check)
+        return
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True,row_width= 2, one_time_keyboard= True)
     markup.add('Да', 'Нет')
     answ = message.text
 
-
     chat_id = message.chat.id
+
     book_info= book_id_serch(int(answ))
     book = Book(book_info[0][0])
     book.author = book_info[0][1]
