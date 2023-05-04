@@ -48,7 +48,7 @@ def handle_help(message):
 
 
 #add
-new_book_dict = {} #Словарь для сбора информации о книге, которую нужно создать
+new_book_dict = {} 
 @bot.message_handler(commands=['add'])
 def handle_add(message):
     msg = bot.reply_to(message, "Введите название книги:")
@@ -85,7 +85,7 @@ def add_book_publish_date(message):
     
     book = new_book_dict[chat_id]
     book.publish_date = int(publish_date)
-    book_info= vars(book) #переменная содержит в себе словарь который передаётся в функцию для добавления в бдшку.
+    book_info= vars(book)
     
     if book_existence_check(book_info) == False:
         msg = bot.send_message(chat_id, f"Отлично, кидай свою книгу!")
@@ -109,8 +109,11 @@ def add_book_path(message):
         book.path = path   
         book_info= vars(book)
         add_book(book_info)
+    
+    new_book_dict.clear()
+    
 
-drop_book_list = {}
+drop_book_dict = {}
 @bot.message_handler(commands=['delete'])   
 def drop_book(message):
     role = role_check(message.chat.id)
@@ -138,7 +141,7 @@ def drop_book_check(message):
     book = Book(book_info[0][0])
     book.author = book_info[0][1]
     book.publish_date = book_info[0][2]
-    drop_book_list[chat_id] = book
+    drop_book_dict[chat_id] = book
 
     if len(book_info) != 0:
         msg= bot.send_message(chat_id, f"Найдена книга:{book_info[0][0]}/{book_info[0][1]}/{book_info[0][2]}.\nУдаляем?", reply_markup=markup)
@@ -149,9 +152,9 @@ def drop_book_check(message):
 def drop_book (message):
     chat_id = message.chat.id
     answer = message.text
-    book = drop_book_list[chat_id]
+    book = drop_book_dict[chat_id]
     if answer == 'Да':
-        book_info= vars(book) #Создаёт словарь с информацией о книге которую нужно удалить
+        book_info= vars(book) 
         try:
             delete(book_info)
             bot.send_message(chat_id, "Книга удалена")
@@ -159,6 +162,8 @@ def drop_book (message):
             bot.send_message(chat_id, "Что-то пошло не так....")
     elif answer == 'Нет':
         bot.send_message(chat_id, "Не хочешь — как хочешь")
+    drop_book_dict.clear()
+    
     
 
 
@@ -166,7 +171,7 @@ def drop_book (message):
 #list
 @bot.message_handler(commands=['list'])
 def handle_list(message):
-    list= list_of_books()#переменная которая принимает список со словарями со всеми книгами из бдшки
+    list= list_of_books()
     chat_id = message.chat.id
     bot.send_message(chat_id, f"Вот что у нас есть:")
     for book in list:
@@ -177,7 +182,7 @@ def handle_list(message):
 
 
 #find
-find_book_dict = {} #Словарь для сбора информации о книге, которую нужно найти
+find_book_dict = {} 
 @bot.message_handler(commands=['find'])
 def handle_find(message):
     msg = bot.reply_to(message, "Введите название книги:")
@@ -211,12 +216,15 @@ def find_book_publish_date(message):
     book = find_book_dict[chat_id]
     book.publish_date = int(publish_date)
     
-    book_info= vars(book) #Создаёт словарь с информацией для проверки существования книги
+    book_info= vars(book) 
     if book_existence_check(book_info):
         id = take_id(book_info)
         msg= bot.send_message(chat_id, f"Найдена книга: {book.title}/{book.author}/{book.publish_date}\nВот её ID: {id}")
     else:
         bot.send_message(chat_id, f"Такого у нас нет")
+    
+    find_book_dict.clear()
+    
 
     
 
