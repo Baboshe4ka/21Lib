@@ -107,9 +107,9 @@ def main():
     #print(list_of_books())
     #print(take_id(book_example))
     #print(take_book(1))
-    add_user(user_example)
+    #add_user(user_example)
     #print(book_id_serch(2))
-    print(role_check(385106886))
+    #print(role_check(385106886))
     pass
     
 
