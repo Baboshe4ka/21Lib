@@ -18,7 +18,8 @@ with open('src\config\conf.json', 'r') as bot_conf:
 token = conf["bot_token"]  # значением вашего токена, полученного от BotFather
 bot = telebot.TeleBot(token)
 
-list_of_func = ['/add', '/list', '/find', '/take', '/delete'] #список реализованных функций 
+list_of_func_admin = ['/add', '/list', '/find', '/take', '/delete'] 
+list_of_func_user= ['/list', '/find', '/take']
 
 
 #start 
@@ -40,19 +41,28 @@ def handle_start(message):
 
 @bot.message_handler(commands=['help'])
 def handle_help(message):
+    role = role_check(message.chat.id)
     text = "Выберите нужное действие:"
-    markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width= 2, one_time_keyboard= True)
-    markup.add(*list_of_func)
-
-    bot.reply_to(message, text, reply_markup=markup)
+    markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width= 2, one_time_keyboard= True) 
+    if role == 'admin':
+        markup.add(*list_of_func_admin)
+        bot.reply_to(message, text, reply_markup=markup)
+    else:
+        markup.add(*list_of_func_user)
+        bot.reply_to(message, text, reply_markup=markup)
 
 
 #add
 new_book_dict = {} 
 @bot.message_handler(commands=['add'])
 def handle_add(message):
-    msg = bot.reply_to(message, "Введите название книги:")
-    bot.register_next_step_handler(msg, add_book_title)
+    role = role_check(message.chat.id)
+    if role == 'admin':
+        msg = bot.reply_to(message, "Введите название книги:")
+        bot.register_next_step_handler(msg, add_book_title)
+    else:
+        msg= bot.reply_to(message, "Вы не можете добавлять книги.")
+    
     
 def add_book_title(message):
     chat_id = message.chat.id
@@ -88,7 +98,7 @@ def add_book_publish_date(message):
     book_info= vars(book)
     
     if book_existence_check(book_info) == False:
-        msg = bot.send_message(chat_id, f"Отлично, кидай свою книгу!")
+        msg = bot.send_message(chat_id, f"Отлично, кидай свою книгу!\nРазмер файла не должен превышать 50МБ")
         bot.register_next_step_handler(msg, add_book_path)
     else:
         bot.send_message(chat_id, f"Такая книга уже существует")
@@ -103,7 +113,7 @@ def add_book_path(message):
             new_book.write(downloaded_file)
         bot.reply_to(message, "Спасибо!")
     except Exception:
-        bot.reply_to(message, "Что то пошло не так...\nВозможно файл слишком большой.")
+        bot.reply_to(message, "Что то пошло не так...\nВозможно файл больше 50МБ.")
     finally:   
         book = new_book_dict[chat_id]
         book.path = path   
@@ -121,7 +131,7 @@ def drop_book(message):
         msg= bot.reply_to(message, "Введите ID книги:")
         bot.register_next_step_handler(msg, drop_book_check)
     else:
-        msg= bot.reply_to(message, "У вас нет прав для удаления книги.")
+        msg= bot.reply_to(message, "Вы не можете удалять книги.")
 
 def drop_book_check(message):
 
