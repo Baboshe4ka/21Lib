@@ -122,7 +122,7 @@ def add_book_path(message):
     
     new_book_dict.clear()
     
-
+#delete
 drop_book_dict = {}
 @bot.message_handler(commands=['delete'])   
 def drop_book(message):
@@ -237,7 +237,7 @@ def find_book_publish_date(message):
     
 
     
-
+#take
 @bot.message_handler(commands=['take'])
 def handle_take(message):
     msg = bot.reply_to(message, "Введите ID книги:")
